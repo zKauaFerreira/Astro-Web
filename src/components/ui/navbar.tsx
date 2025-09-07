@@ -265,8 +265,8 @@ export function Navbar() {
                   to={item.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={cn(
-                    "mobile-menu-item text-astro-light hover:text-astro-white transition-all duration-300 font-medium py-4 text-lg border-b border-astro-nebula/30 hover:border-astro-purple/50 hover:bg-astro-purple/10 hover:px-4 rounded-lg hover:transform hover:translate-x-2",
-                    location.pathname === item.href && "text-astro-cyan border-astro-cyan/50"
+                    "mobile-menu-item text-astro-light hover:text-astro-white transition-colors duration-200 font-medium py-4 text-lg border-b border-astro-nebula/30 hover:border-astro-purple/30",
+                    location.pathname === item.href && "text-astro-cyan"
                   )}
                 >
                   {item.label}
