@@ -168,13 +168,14 @@ export function Navbar() {
       )}
       style={{ border: 'none', borderTop: 'none', borderBottom: 'none' }}
     >
-      {/* Enhanced animated gradient border - Complete frame */}
+      {/* Enhanced animated gradient border - Only on borders */}
       <div 
         ref={borderRef}
         className="absolute inset-0 opacity-0 pointer-events-none"
         style={{
           background: 'transparent',
-          border: '2px solid transparent',
+          borderTop: '2px solid transparent',
+          borderBottom: '2px solid transparent',
           backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(138,79,255,0.4) 10%, rgba(78,205,196,0.8) 25%, rgba(138,79,255,0.9) 50%, rgba(78,205,196,0.8) 75%, rgba(138,79,255,0.4) 90%, transparent 100%)',
           backgroundOrigin: 'border-box',
           backgroundClip: 'border-box',
