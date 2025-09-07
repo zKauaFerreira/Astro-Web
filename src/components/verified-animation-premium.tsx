@@ -17,10 +17,14 @@ export function VerifiedAnimationPremium() {
       {isVisible && (
         <div className="absolute inset-0 pointer-events-none">
           <Lottie
-            loop
+            loop={false} // Executa apenas uma vez
             animationData={confettiJson}
             play
-            style={{ width: "100%", height: "100%" }}
+            style={{
+              width: "100vw", // Ocupa toda a largura da tela
+              height: "100vh", // Ocupa toda a altura da tela
+              maxHeight: "100%", 
+            }}
           />
         </div>
       )}
