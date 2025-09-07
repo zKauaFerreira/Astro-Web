@@ -1,40 +1,39 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, Sparkles } from "lucide-react";
 
-export function VerifiedAnimation() {
+export function VerifiedAnimationPremium() {
   const [isVisible, setIsVisible] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setIsVisible(true), 200);
     const timer2 = setTimeout(() => setShowConfetti(true), 400);
-    const timer3 = setTimeout(() => setShowConfetti(false), 1200);
     
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
     };
   }, []);
 
   return (
     <div className="relative flex flex-col items-center justify-center py-16">
-      {/* Confetti particles */}
+      {/* Confetti particles - sempre visíveis após iniciar */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
               className="absolute animate-confetti"
               style={{
                 left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 0.5}s`,
-                animationDuration: `${1 + Math.random() * 0.5}s`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 1}s`,
+                animationDuration: `${1.5 + Math.random() * 1}s`,
               }}
             >
               <Sparkles 
                 className="text-astro-gold" 
-                size={Math.random() * 10 + 8}
+                size={Math.random() * 12 + 8}
               />
             </div>
           ))}
@@ -43,12 +42,12 @@ export function VerifiedAnimation() {
       
       {/* Main check icon */}
       <div
-        className={cn(
-          "transition-all duration-600 ease-out",
-          isVisible 
+        className={
+          "transition-all duration-600 ease-out " +
+          (isVisible 
             ? "opacity-100 scale-100 animate-bounce-celebrate" 
-            : "opacity-0 scale-50"
-        )}
+            : "opacity-0 scale-50")
+        }
       >
         <div className="relative">
           <div className="absolute inset-0 bg-astro-purple rounded-full blur-xl opacity-30 animate-pulse" />
@@ -62,8 +61,4 @@ export function VerifiedAnimation() {
       </div>
     </div>
   );
-}
-
-function cn(...classes: (string | undefined | boolean)[]): string {
-  return classes.filter(Boolean).join(' ');
 }

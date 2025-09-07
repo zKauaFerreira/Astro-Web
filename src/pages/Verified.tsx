@@ -2,25 +2,19 @@ import { useEffect } from "react";
 import { ArrowLeft, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CosmicCard } from "@/components/ui/cosmic-card";
-import { VerifiedAnimation } from "@/components/verified-animation-premium";
+import { VerifiedAnimationPremium } from "@/components/verified-animation-premium";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 
 const Verified = () => {
   useEffect(() => {
-    // Set page title for better UX
     document.title = "Email Verificado - AstroRhythm";
   }, []);
 
   const handleReturnToApp = () => {
-    // This URL would be provided by the mobile app
     const appDeepLink = "astrorhythm://verified";
     const fallbackUrl = "https://play.google.com/store/apps/details?id=com.astrorhythm";
-    
-    // Try to open the app, fallback to store if not installed
     window.location.href = appDeepLink;
-    
-    // Fallback after a short delay
     setTimeout(() => {
       window.location.href = fallbackUrl;
     }, 1000);
@@ -36,7 +30,7 @@ const Verified = () => {
             
             {/* Success Animation */}
             <div className="mb-12">
-              <VerifiedAnimation />
+              <VerifiedAnimationPremium />
             </div>
             
             {/* Success Message */}
