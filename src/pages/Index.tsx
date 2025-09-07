@@ -15,439 +15,226 @@ gsap.registerPlugin(ScrollTrigger);
 
 const Index = () => {
   const navigate = useNavigate();
-  const heroRef = useRef(null);
-  const aboutRef = useRef(null);
-  const featuresRef = useRef(null);
-  const testimonialsRef = useRef(null);
-  const ctaRef = useRef(null);
-  
+  const heroRef = useRef<any>(null);
+  const aboutRef = useRef<any>(null);
+  const featuresRef = useRef<any>(null);
+  const testimonialsRef = useRef<any>(null);
+  const ctaRef = useRef<any>(null);
+
   const { ref: aboutScrollRef, isVisible: aboutVisible } = useScrollAnimation();
   const { ref: featuresScrollRef, isVisible: featuresVisible } = useScrollAnimation();
   const { ref: testimonialsScrollRef, isVisible: testimonialsVisible } = useScrollAnimation();
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Enhanced Hero Animation with more fluid sequences
-      const heroTl = gsap.timeline({ delay: 0.5 });
-      
-      // Parallax background effect
-      gsap.set(".hero-bg", { scale: 1.1 });
-      
-      heroTl.fromTo(".hero-title", 
-        { 
-          opacity: 0, 
-          y: 80, 
-          scale: 0.7,
-          rotationX: 30,
-          filter: "blur(10px)"
-        },
-        { 
-          opacity: 1, 
-          y: 0, 
-          scale: 1,
-          rotationX: 0,
-          filter: "blur(0px)", 
-          duration: 1.8, 
-          ease: "power4.out" 
-        }
-      )
-      .fromTo(".hero-subtitle", 
-        { 
-          opacity: 0, 
-          y: 60,
-          scale: 0.9,
-          filter: "blur(5px)"
-        },
-        { 
-          opacity: 1, 
-          y: 0,
-          scale: 1,
-          filter: "blur(0px)", 
-          duration: 1.4, 
-          ease: "power3.out" 
-        }, "-=1.2"
-      )
-      .fromTo(".hero-buttons", 
-        { 
-          opacity: 0, 
-          y: 40, 
-          scale: 0.8,
-          rotationY: 15 
-        },
-        { 
-          opacity: 1, 
-          y: 0, 
-          scale: 1,
-          rotationY: 0, 
-          duration: 1.2, 
-          ease: "back.out(1.7)" 
-        }, "-=0.8"
-      );
+    // Respect user preference for reduced motion
+    const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      // kill any existing triggers if present
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+      return;
+    }
 
-      // Background parallax scroll effect
+    const ctx = gsap.context(() => {
+      // ====== HERO (soft entrance) ======
+      const heroTl = gsap.timeline({ delay: 0.35, defaults: { ease: "power2.out" } });
+
+      // make parallax element performant
+      gsap.set(".hero-bg", { scale: 1.06, willChange: "transform" });
+
+      heroTl
+        .fromTo(
+          ".hero-title",
+          { opacity: 0, y: 30, scale: 0.99 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.9 }
+        )
+        .fromTo(
+          ".hero-subtitle",
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.8 },
+          "-=0.55"
+        )
+        .fromTo(
+          ".hero-buttons",
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.7 },
+          "-=0.45"
+        );
+
+      // Parallax background scroll (gentle)
       ScrollTrigger.create({
         trigger: heroRef.current,
         start: "top top",
         end: "bottom top",
-        scrub: 1,
+        scrub: 0.7,
         onUpdate: (self) => {
+          const p = self.progress;
+          // small transforms for performance
           gsap.to(".hero-bg", {
-            y: self.progress * 100,
-            scale: 1.1 + (self.progress * 0.1),
-            duration: 0.3
+            y: p * 45,
+            scale: 1.06 + p * 0.02,
+            duration: 0.4,
+            overwrite: true
           });
+          gsap.to(".parallax-medium", { y: p * 60, duration: 0.4, overwrite: true });
+          gsap.to(".parallax-fast", { y: p * 90, duration: 0.4, overwrite: true });
         }
       });
 
-      // Enhanced About Section with reveal animations
-      ScrollTrigger.create({
-        trigger: aboutRef.current,
-        start: "top 80%",
-        end: "bottom 20%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          const aboutTl = gsap.timeline();
-          
-          // Background reveal effect
-          gsap.fromTo(aboutRef.current,
-            { clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0% 100%)" },
-            { clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0% 100%)", duration: 1.5, ease: "power3.out" }
-          );
-          
-          aboutTl.fromTo(".about-title", 
-            { 
-              opacity: 0, 
-              y: 60, 
-              rotationX: 25,
-              scale: 0.8,
-              filter: "blur(8px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              rotationX: 0,
-              scale: 1,
-              filter: "blur(0px)", 
-              duration: 1.4, 
-              ease: "power4.out" 
+      // Utility to create a simple reveal animation for sections
+      const createReveal = (target: any, titleSel?: string, contentSel?: string, start = "top 85%") => {
+        ScrollTrigger.create({
+          trigger: target,
+          start,
+          toggleActions: "play none none reverse",
+          onEnter: () => {
+            if (titleSel) {
+              gsap.fromTo(titleSel, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
             }
-          )
-          .fromTo(".about-text", 
-            { 
-              opacity: 0, 
-              y: 40,
-              scale: 0.95
-            },
-            { 
-              opacity: 1, 
-              y: 0,
-              scale: 1, 
-              duration: 1.2, 
-              ease: "power3.out" 
-            }, "-=0.8"
-          );
-        }
-      });
+            if (contentSel) {
+              gsap.fromTo(contentSel, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.85, ease: "power2.out", delay: 0.08 });
+            }
+          }
+        });
+      };
 
-      // Features section with sophisticated stagger effects
+      // ====== ABOUT ======
+      createReveal(aboutRef.current, ".about-title", ".about-text", "top 85%");
+
+      // ====== FEATURES ======
       ScrollTrigger.create({
         trigger: featuresRef.current,
-        start: "top 75%",
-        end: "bottom 25%",
+        start: "top 82%",
         toggleActions: "play none none reverse",
         onEnter: () => {
-          const featuresTl = gsap.timeline();
-          
-          // Section reveal
-          gsap.fromTo(featuresRef.current,
-            { clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0% 100%)" },
-            { clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0% 100%)", duration: 1.2, ease: "power3.out" }
-          );
-          
-          featuresTl.fromTo(".features-title", 
-            { 
-              opacity: 0, 
-              y: 70, 
-              scale: 0.8,
-              rotationY: 20,
-              filter: "blur(10px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              scale: 1,
-              rotationY: 0,
-              filter: "blur(0px)", 
-              duration: 1.5, 
-              ease: "power4.out" 
-            }
-          )
-          .fromTo(".features-subtitle", 
-            { 
-              opacity: 0, 
-              y: 40,
-              scale: 0.9
-            },
-            { 
-              opacity: 1, 
+          // title + subtitle
+          gsap.fromTo(".features-title", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
+          gsap.fromTo(".features-subtitle", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.06 });
+
+          // cards: simple stagger fade-in + slight lift
+          gsap.fromTo(
+            ".feature-card",
+            { opacity: 0, y: 18, scale: 0.995 },
+            {
+              opacity: 1,
               y: 0,
-              scale: 1, 
-              duration: 1.2, 
-              ease: "power3.out" 
-            }, "-=1.0"
-          )
-          .fromTo(".feature-card", 
-            { 
-              opacity: 0, 
-              y: 80, 
-              scale: 0.7, 
-              rotationY: 30,
-              rotationX: 15,
-              filter: "blur(5px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              scale: 1, 
-              rotationY: 0,
-              rotationX: 0,
-              filter: "blur(0px)",
-              duration: 1.4, 
-              ease: "back.out(1.7)",
-              stagger: {
-                amount: 0.6,
-                from: "start",
-                ease: "power2.out"
-              }
-            }, "-=0.8"
+              scale: 1,
+              duration: 0.85,
+              ease: "power2.out",
+              stagger: { each: 0.10, from: "start" }
+            }
           );
-          
-          // Continuous floating animation for cards
+
+          // subtle continuous float with tiny amplitude to avoid jank
           gsap.to(".feature-card", {
-            y: -5,
-            duration: 2,
-            ease: "power2.inOut",
+            y: "-=3",
+            duration: 4,
+            ease: "sine.inOut",
             yoyo: true,
             repeat: -1,
-            stagger: 0.2
+            stagger: { amount: 0.6 },
+            overwrite: false
           });
         }
       });
 
-      // Enhanced Testimonials with 3D effects
+      // ====== TESTIMONIALS ======
       ScrollTrigger.create({
         trigger: testimonialsRef.current,
-        start: "top 80%",
-        end: "bottom 20%",
+        start: "top 84%",
         toggleActions: "play none none reverse",
         onEnter: () => {
-          const testimonialsTl = gsap.timeline();
-          
-          // Section reveal
-          gsap.fromTo(testimonialsRef.current,
-            { clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0% 100%)" },
-            { clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0% 100%)", duration: 1.3, ease: "power3.out" }
+          gsap.fromTo(".testimonials-title", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
+          gsap.fromTo(
+            ".testimonial-card",
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.9, ease: "power2.out", stagger: 0.12 }
           );
-          
-          testimonialsTl.fromTo(".testimonials-title", 
-            { 
-              opacity: 0, 
-              y: 60,
-              scale: 0.8,
-              rotationX: 20
-            },
-            { 
-              opacity: 1, 
-              y: 0,
-              scale: 1,
-              rotationX: 0, 
-              duration: 1.4, 
-              ease: "power4.out" 
-            }
-          )
-          .fromTo(".testimonial-card", 
-            { 
-              opacity: 0, 
-              y: 70, 
-              rotationX: 45, 
-              rotationY: 15,
-              scale: 0.8,
-              filter: "blur(8px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              rotationX: 0,
-              rotationY: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              duration: 1.5, 
-              ease: "back.out(1.5)",
-              stagger: {
-                amount: 0.4,
-                from: "center"
-              }
-            }, "-=0.8"
-          );
-          
-          // Gentle hover effects
+
+          // very gentle sway (low cost)
           gsap.to(".testimonial-card", {
-            rotationY: 2,
-            duration: 3,
-            ease: "power2.inOut",
+            rotationY: 1,
+            duration: 6,
+            ease: "sine.inOut",
             yoyo: true,
             repeat: -1,
-            stagger: 0.3
+            stagger: 0.3,
+            overwrite: false
           });
         }
       });
 
-      // Enhanced CTA with dramatic entrance
+      // ====== CTA ======
       ScrollTrigger.create({
         trigger: ctaRef.current,
-        start: "top 85%",
-        end: "bottom 15%",
+        start: "top 82%",
         toggleActions: "play none none reverse",
         onEnter: () => {
-          // Section reveal
-          gsap.fromTo(ctaRef.current,
-            { clipPath: "polygon(0 100%, 100% 100%, 100% 100%, 0% 100%)" },
-            { clipPath: "polygon(0 0%, 100% 0%, 100% 100%, 0% 100%)", duration: 1.4, ease: "power3.out" }
-          );
-          
-          gsap.fromTo(".cta-content", 
-            { 
-              opacity: 0, 
-              y: 80, 
-              scale: 0.7, 
-              rotationY: 25,
-              rotationX: 20,
-              filter: "blur(15px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              scale: 1, 
-              rotationY: 0,
-              rotationX: 0,
-              filter: "blur(0px)", 
-              duration: 2, 
-              ease: "power4.out" 
-            }
-          );
-          
-          // Pulsing glow effect
+          gsap.fromTo(".cta-content", { opacity: 0, y: 24, scale: 0.995 }, { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power2.out" });
           gsap.to(".cta-content", {
-            filter: "drop-shadow(0 0 20px rgba(138, 79, 255, 0.3))",
-            duration: 2,
-            ease: "power2.inOut",
+            boxShadow: "0 10px 34px rgba(138,79,255,0.10)",
+            duration: 2.2,
+            repeat: -1,
             yoyo: true,
-            repeat: -1
+            ease: "sine.inOut",
+            overwrite: false
           });
         }
       });
 
-      // Continuous parallax effects for backgrounds
+      // ====== PRICING & FOOTER ======
+      ScrollTrigger.create({
+        trigger: ".pricing-section",
+        start: "top 86%",
+        toggleActions: "play none none reverse",
+        onEnter: () => {
+          gsap.fromTo(".pricing-title", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 });
+          gsap.fromTo(".pricing-card", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.85, stagger: 0.12 });
+        }
+      });
+
+      ScrollTrigger.create({
+        trigger: ".footer-section",
+        start: "top 95%",
+        toggleActions: "play none none reverse",
+        onEnter: () => {
+          gsap.fromTo(".footer-content", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 });
+        }
+      });
+
+      // Global parallax for entire body (low amplitude)
       ScrollTrigger.create({
         trigger: "body",
         start: "top top",
         end: "bottom bottom",
-        scrub: 1,
+        scrub: 0.7,
         onUpdate: (self) => {
-          // Multiple layer parallax
-          gsap.to(".parallax-slow", {
-            y: self.progress * 50,
-            duration: 0.3
-          });
-          gsap.to(".parallax-medium", {
-            y: self.progress * 100,
-            duration: 0.3
-          });
-          gsap.to(".parallax-fast", {
-            y: self.progress * 150,
-            duration: 0.3
-          });
+          gsap.to(".parallax-slow", { y: self.progress * 40, duration: 0.35, overwrite: true });
+          gsap.to(".parallax-medium", { y: self.progress * 80, duration: 0.35, overwrite: true });
+          gsap.to(".parallax-fast", { y: self.progress * 120, duration: 0.35, overwrite: true });
         }
       });
-
-      // Additional sections scroll animations
-      ScrollTrigger.create({
-        trigger: ".pricing-section",
-        start: "top 80%",
-        end: "bottom 20%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".pricing-title", 
-            { 
-              opacity: 0, 
-              y: 60, 
-              scale: 0.8,
-              filter: "blur(8px)"
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              scale: 1,
-              filter: "blur(0px)", 
-              duration: 1.4, 
-              ease: "power4.out" 
-            }
-          );
-          
-          gsap.fromTo(".pricing-card", 
-            { 
-              opacity: 0, 
-              y: 80, 
-              scale: 0.8,
-              rotationY: 20
-            },
-            { 
-              opacity: 1, 
-              y: 0, 
-              scale: 1,
-              rotationY: 0, 
-              duration: 1.3, 
-              ease: "back.out(1.7)",
-              stagger: 0.15
-            }
-          );
-        }
-      });
-
-      // Footer animations
-      ScrollTrigger.create({
-        trigger: ".footer-section",
-        start: "top 90%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".footer-content", 
-            { 
-              opacity: 0, 
-              y: 40,
-              scale: 0.95
-            },
-            { 
-              opacity: 1, 
-              y: 0,
-              scale: 1, 
-              duration: 1.2, 
-              ease: "power3.out" 
-            }
-          );
-        }
-      });
-
     }, heroRef);
 
-    return () => ctx.revert();
+    return () => {
+      try {
+        ctx.revert();
+      } catch (err) {
+        // safe fallback
+      }
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+    };
   }, []);
-  
-  // Prevent reduced motion users from seeing animations
+
+  // Also kill animations if prefers-reduced-motion toggles later
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-    }
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        ScrollTrigger.getAll().forEach((t) => t.kill());
+      }
+    };
+    mq.addEventListener?.("change", handler);
+    return () => mq.removeEventListener?.("change", handler);
   }, []);
 
   const premiumFeatures = [
@@ -519,16 +306,16 @@ const Index = () => {
   return (
     <div ref={heroRef} className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-24 pb-16 lg:pt-32 lg:pb-24">
-        <div 
+        <div
           className="hero-bg absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 parallax-slow"
           style={{ backgroundImage: `url(${cosmicHero})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-astro-space/50 via-astro-space/70 to-astro-space parallax-medium" />
         <div className="absolute inset-0 bg-gradient-radial from-astro-purple/5 via-transparent to-transparent parallax-fast" />
-        
+
         <div className="relative container mx-auto px-4 text-center">
           <div className="max-w-4xl mx-auto space-y-8">
             <h1 className="hero-title text-cosmic-xl text-astro-white leading-tight">
@@ -537,22 +324,22 @@ const Index = () => {
                 Cosmos
               </span>
             </h1>
-            
+
             <p className="hero-subtitle text-xl md:text-2xl text-astro-light max-w-2xl mx-auto">
               Transforme seus momentos de meditação em uma jornada astronômica única. 
               Descubra a harmonia entre mindfulness e a vastidão do universo.
             </p>
-            
+
             <div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                variant="cosmic" 
+              <Button
+                variant="cosmic"
                 size="hero"
                 onClick={() => navigate("/planos")}
               >
                 Conheça os Planos
               </Button>
-              <Button 
-                variant="glass" 
+              <Button
+                variant="glass"
                 size="hero"
                 onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
               >
@@ -589,13 +376,13 @@ const Index = () => {
               Eleve sua prática com recursos exclusivos desenvolvidos para exploradores do cosmos
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {premiumFeatures.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <CosmicCard 
-                  key={index} 
+                <CosmicCard
+                  key={index}
                   className="feature-card hover-lift"
                 >
                   <div className="space-y-4">
@@ -624,12 +411,12 @@ const Index = () => {
               O Que Dizem Nossos Exploradores
             </h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <CosmicCard 
-                key={index} 
-                variant="glass" 
+              <CosmicCard
+                key={index}
+                variant="glass"
                 className="testimonial-card hover-lift"
               >
                 <div className="space-y-4">
@@ -655,15 +442,15 @@ const Index = () => {
               Comece Sua Jornada{" "}
               <span className="text-gradient-cosmic">Cósmica</span>
             </h2>
-            
+
             <p className="text-xl text-astro-light">
               Transforme seus momentos de introspecção em experiências extraordinárias 
               conectadas com o universo.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                variant="cosmic" 
+              <Button
+                variant="cosmic"
                 size="hero"
                 onClick={() => navigate("/planos")}
               >
