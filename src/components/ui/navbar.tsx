@@ -168,17 +168,17 @@ export function Navbar() {
       )}
       style={{ border: 'none', borderTop: 'none', borderBottom: 'none' }}
     >
-      {/* Enhanced animated gradient border - Only on borders */}
+      {/* Enhanced animated gradient border - Thin outline only */}
       <div 
         ref={borderRef}
         className="absolute inset-0 opacity-0 pointer-events-none"
         style={{
-          background: 'transparent',
-          borderTop: '2px solid transparent',
-          borderBottom: '2px solid transparent',
-          backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(138,79,255,0.4) 10%, rgba(78,205,196,0.8) 25%, rgba(138,79,255,0.9) 50%, rgba(78,205,196,0.8) 75%, rgba(138,79,255,0.4) 90%, transparent 100%)',
-          backgroundOrigin: 'border-box',
-          backgroundClip: 'border-box',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(138,79,255,0.4) 10%, rgba(78,205,196,0.8) 25%, rgba(138,79,255,0.9) 50%, rgba(78,205,196,0.8) 75%, rgba(138,79,255,0.4) 90%, transparent 100%)',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          maskComposite: 'exclude',
+          padding: '1px',
           borderRadius: '0',
           boxShadow: '0 0 20px rgba(78,205,196,0.3)',
           clipPath: "polygon(50% 0%, 50% 0%, 50% 100%, 50% 100%)"
