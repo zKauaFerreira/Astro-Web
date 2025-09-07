@@ -21,8 +21,8 @@ export function VerifiedAnimationPremium() {
             animationData={confettiJson}
             play
             style={{
-              width: "3000px",  // extremamente grande
-              height: "3000px",
+              width: "1800px",  // 60% do tamanho anterior
+              height: "1800px",
               position: "absolute",
               top: "50%",
               left: "50%",
