@@ -12,7 +12,7 @@ export function VerifiedAnimationPremium() {
   }, []);
 
   return (
-    <div className="relative flex flex-col items-center justify-center py-16">
+    <div className="relative flex flex-col items-center justify-center min-h-[120vh]">
       {/* Confetti animation */}
       {isVisible && (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
@@ -21,12 +21,12 @@ export function VerifiedAnimationPremium() {
             animationData={confettiJson}
             play
             style={{
-              width: "1800px",  // 60% do tamanho anterior
+              width: "1800px",
               height: "1800px",
               position: "absolute",
-              top: "50%",
+              top: "45%", // desloca mais para baixo
               left: "50%",
-              transform: "translate(-50%, -50%)", // centraliza perfeitamente
+              transform: "translate(-50%, -50%)", // centraliza horizontal e verticalmente
               zIndex: 0,
             }}
           />
