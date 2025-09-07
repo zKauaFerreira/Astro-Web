@@ -12,14 +12,134 @@ const Verified = () => {
   }, []);
 
   const handleReturnToApp = () => {
-    const appDeepLink = "astrorhythm://verified";
-    const fallbackUrl = "https://play.google.com/store/apps/details?id=com.astrorhythm";
-    // tentativa de abrir deep link do app
-    window.location.href = appDeepLink;
-    // fallback para loja após 1s
-    setTimeout(() => {
-      window.location.href = fallbackUrl;
-    }, 1000);
+    // deep link scheme + fallbacks
+    const appScheme = "astrorhythm://verified";
+    const androidStoreUrl = "https://play.google.com/store/apps/details?id=com.astrorhythm"; // substituir se necessário
+    const iosStoreUrl = "https://apps.apple.com/app/idYOUR_APP_ID"; // substituir pelo ID real
+    const fallbackWeb = "https://astrorhythm.com"; // fallback web
+
+    const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const isAndroid = /android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    let didOpenApp = false;
+    let visibilityListener: (() => void) | null = null;
+    let cleanupTimeout = 0;
+
+    const openFallback = (url: string) => {
+      try {
+        window.location.href = url;
+      } catch (e) {
+        window.open(url, "_blank");
+      }
+    };
+
+    // mark that app was opened when visibility changes
+    const markOpened = () => {
+      didOpenApp = true;
+      // cleanup if needed
+      if (visibilityListener) {
+        document.removeEventListener("visibilitychange", visibilityListener);
+        visibilityListener = null;
+      }
+      if (cleanupTimeout) {
+        clearTimeout(cleanupTimeout);
+      }
+    };
+
+    if (isAndroid) {
+      // Use intent:// for Android (opens app if installed, otherwise Play Store)
+      try {
+        // Try intent first — this pattern usually opens app when installed.
+        const intentUrl = `intent://verified#Intent;scheme=astrorhythm;package=com.astrorhythm;end`;
+        // set a listener to detect if document becomes hidden (user left to app)
+        visibilityListener = () => {
+          if (document.visibilityState === "hidden") markOpened();
+        };
+        document.addEventListener("visibilitychange", visibilityListener);
+
+        // open intent
+        window.location.href = intentUrl;
+
+        // fallback to Play Store after a timeout if app didn't open
+        cleanupTimeout = window.setTimeout(() => {
+          if (!didOpenApp) {
+            // Remove listener and navigate to Play Store
+            if (visibilityListener) {
+              document.removeEventListener("visibilitychange", visibilityListener);
+              visibilityListener = null;
+            }
+            openFallback(androidStoreUrl);
+          }
+        }, 1500);
+      } catch (err) {
+        openFallback(androidStoreUrl);
+      }
+      return;
+    }
+
+    if (isIOS) {
+      // iOS: try iframe trick + visibility detection (not 100% reliable across all iOS versions/browsers)
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = appScheme;
+
+      visibilityListener = () => {
+        if (document.visibilityState === "hidden") {
+          markOpened();
+        }
+      };
+      document.addEventListener("visibilitychange", visibilityListener);
+
+      // append iframe and set fallback
+      document.body.appendChild(iframe);
+
+      cleanupTimeout = window.setTimeout(() => {
+        if (!didOpenApp) {
+          // cleanup iframe and listener
+          try {
+            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+          } catch {}
+          if (visibilityListener) {
+            document.removeEventListener("visibilitychange", visibilityListener);
+            visibilityListener = null;
+          }
+          // fallback to App Store
+          openFallback(iosStoreUrl);
+        }
+      }, 1200);
+
+      // ensure we remove iframe/listener if user navigates away or if app opened
+      const removeSafe = () => {
+        try {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        } catch {}
+        if (visibilityListener) {
+          document.removeEventListener("visibilitychange", visibilityListener);
+          visibilityListener = null;
+        }
+        if (cleanupTimeout) clearTimeout(cleanupTimeout);
+      };
+
+      // in case user clicks again or page is unloaded
+      window.addEventListener("pagehide", removeSafe, { once: true });
+
+      return;
+    }
+
+    // Desktop / other platforms: attempt direct navigation to scheme (may show browser message).
+    try {
+      // attempt open custom scheme
+      window.location.href = appScheme;
+
+      // fallback to web after short timeout
+      cleanupTimeout = window.setTimeout(() => {
+        if (!didOpenApp) {
+          openFallback(fallbackWeb);
+        }
+      }, 1200);
+    } catch {
+      openFallback(fallbackWeb);
+    }
   };
 
   return (
