@@ -357,12 +357,12 @@ const Index = () => {
 
   const testimonials = [
     {
-      name: "Marina Silva",
+      name: "Julia Silva",
       text: "O AstroRhythm transformou completamente minha prática de meditação. A conexão com os ciclos cósmicos trouxe uma profundidade incrível.",
       rating: 5
     },
     {
-      name: "Carlos Mendoza",
+      name: "Ricardo Mendoza",
       text: "As experiências astronômicas são únicas. Meditar durante eclipses lunares nunca foi tão significativo.",
       rating: 5
     },
