@@ -14,7 +14,9 @@ const Verified = () => {
   const handleReturnToApp = () => {
     const appDeepLink = "astrorhythm://verified";
     const fallbackUrl = "https://play.google.com/store/apps/details?id=com.astrorhythm";
+    // tentativa de abrir deep link do app
     window.location.href = appDeepLink;
+    // fallback para loja após 1s
     setTimeout(() => {
       window.location.href = fallbackUrl;
     }, 1000);
