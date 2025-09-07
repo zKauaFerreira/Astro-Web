@@ -15,8 +15,9 @@ import { Footer } from "@/components/ui/footer";
  * NEXT_PUBLIC_EXPO_SCHEME=exp://exp.host/@your-username/your-project
  * NEXT_PUBLIC_EXPO_WEB=https://expo.dev/@your-username/your-project
  */
-const EXPO_SCHEME = process.env.NEXT_PUBLIC_EXPO_SCHEME || "exp://exp.host/@your-username/your-project";
-const EXPO_WEB = process.env.NEXT_PUBLIC_EXPO_WEB || "https://expo.dev/@your-username/your-project";
+const EXPO_SCHEME = "exp://192.168.0.191:8081";
+const EXPO_WEB = "exp://192.168.0.191:8081";
+
 
 const Verified = () => {
   useEffect(() => {
