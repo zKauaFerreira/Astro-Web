@@ -26,41 +26,28 @@ const Index = () => {
   const { ref: testimonialsScrollRef, isVisible: testimonialsVisible } = useScrollAnimation();
 
   useEffect(() => {
-    // Respect user preference for reduced motion
+    // respect reduced motion
     const prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) {
-      // kill any existing triggers if present
       ScrollTrigger.getAll().forEach((t) => t.kill());
       return;
     }
 
+    // Use gsap.context so selectors are scoped and cleanup is easy
     const ctx = gsap.context(() => {
-      // ====== HERO (soft entrance) ======
-      const heroTl = gsap.timeline({ delay: 0.35, defaults: { ease: "power2.out" } });
+      // small default ease and durations
+      const defaultEase = "power2.out";
 
-      // make parallax element performant
+      // HERO: gentle entrance (not scroll-synced)
+      const heroTl = gsap.timeline({ delay: 0.35, defaults: { ease: defaultEase } });
       gsap.set(".hero-bg", { scale: 1.06, willChange: "transform" });
 
       heroTl
-        .fromTo(
-          ".hero-title",
-          { opacity: 0, y: 30, scale: 0.99 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.9 }
-        )
-        .fromTo(
-          ".hero-subtitle",
-          { opacity: 0, y: 18 },
-          { opacity: 1, y: 0, duration: 0.8 },
-          "-=0.55"
-        )
-        .fromTo(
-          ".hero-buttons",
-          { opacity: 0, y: 12 },
-          { opacity: 1, y: 0, duration: 0.7 },
-          "-=0.45"
-        );
+        .fromTo(".hero-title", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.9 })
+        .fromTo(".hero-subtitle", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 }, "-=0.55")
+        .fromTo(".hero-buttons", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.7 }, "-=0.45");
 
-      // Parallax background scroll (gentle)
+      // Parallax background synced to scroll (gentle)
       ScrollTrigger.create({
         trigger: heroRef.current,
         start: "top top",
@@ -68,140 +55,215 @@ const Index = () => {
         scrub: 0.7,
         onUpdate: (self) => {
           const p = self.progress;
-          // small transforms for performance
-          gsap.to(".hero-bg", {
-            y: p * 45,
-            scale: 1.06 + p * 0.02,
-            duration: 0.4,
-            overwrite: true
-          });
-          gsap.to(".parallax-medium", { y: p * 60, duration: 0.4, overwrite: true });
-          gsap.to(".parallax-fast", { y: p * 90, duration: 0.4, overwrite: true });
+          gsap.to(".hero-bg", { y: p * 45, scale: 1.06 + p * 0.02, duration: 0.35, overwrite: true });
+          gsap.to(".parallax-medium", { y: p * 60, duration: 0.35, overwrite: true });
+          gsap.to(".parallax-fast", { y: p * 90, duration: 0.35, overwrite: true });
         }
       });
 
-      // Utility to create a simple reveal animation for sections
-      const createReveal = (target: any, titleSel?: string, contentSel?: string, start = "top 85%") => {
-        ScrollTrigger.create({
-          trigger: target,
-          start,
-          toggleActions: "play none none reverse",
-          onEnter: () => {
-            if (titleSel) {
-              gsap.fromTo(titleSel, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
-            }
-            if (contentSel) {
-              gsap.fromTo(contentSel, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.85, ease: "power2.out", delay: 0.08 });
+      // Use matchMedia to adapt triggers for breakpoints
+      const mm = gsap.matchMedia();
+
+      // Desktop / large screens
+      mm.add("(min-width: 1024px)", () => {
+        // ABOUT - scroll-synced subtle reveal for heading (fade + move up) with small scrub
+        gsap.fromTo(
+          ".about-title",
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: aboutRef.current,
+              start: "top 85%",
+              end: "top 60%",
+              scrub: 0.6
             }
           }
-        });
-      };
+        );
 
-      // ====== ABOUT ======
-      createReveal(aboutRef.current, ".about-title", ".about-text", "top 85%");
-
-      // ====== FEATURES ======
-      ScrollTrigger.create({
-        trigger: featuresRef.current,
-        start: "top 82%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          // title + subtitle
-          gsap.fromTo(".features-title", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
-          gsap.fromTo(".features-subtitle", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.06 });
-
-          // cards: simple stagger fade-in + slight lift
-          gsap.fromTo(
-            ".feature-card",
-            { opacity: 0, y: 18, scale: 0.995 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: 0.85,
-              ease: "power2.out",
-              stagger: { each: 0.10, from: "start" }
+        gsap.fromTo(
+          ".about-text",
+          { opacity: 0, y: 18 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: aboutRef.current,
+              start: "top 82%",
+              end: "top 62%",
+              scrub: 0.45
             }
-          );
+          }
+        );
 
-          // subtle continuous float with tiny amplitude to avoid jank
-          gsap.to(".feature-card", {
-            y: "-=3",
-            duration: 4,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-            stagger: { amount: 0.6 },
-            overwrite: false
-          });
-        }
+        // FEATURES: batch animate large lists to reduce overhead; cards fade from bottom in stagger when entering
+        ScrollTrigger.batch(".feature-card", {
+          interval: 0.12,
+          batchMax: 6,
+          start: "top 75%",
+          onEnter: (batch) => {
+            gsap.fromTo(
+              batch,
+              { opacity: 0, y: 20, scale: 0.995 },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.85,
+                ease: defaultEase,
+                stagger: { each: 0.08, from: "start" }
+              }
+            );
+          },
+          onLeaveBack: (batch) => {
+            gsap.to(batch, { opacity: 0, y: 12, duration: 0.5, ease: defaultEase, stagger: 0.05 });
+          }
+        });
+
+        // Features title/subtitle with small scrub for smooth reveal tied to scroll
+        gsap.fromTo(
+          ".features-title",
+          { opacity: 0, y: 18 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: featuresRef.current,
+              start: "top 80%",
+              end: "top 60%",
+              scrub: 0.5
+            }
+          }
+        );
+
+        gsap.fromTo(
+          ".features-subtitle",
+          { opacity: 0, y: 14 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: featuresRef.current,
+              start: "top 78%",
+              end: "top 58%",
+              scrub: 0.45
+            }
+          }
+        );
+
+        // Testimonials: batch + gentle float
+        ScrollTrigger.batch(".testimonial-card", {
+          interval: 0.14,
+          batchMax: 4,
+          start: "top 80%",
+          onEnter: (batch) => {
+            gsap.fromTo(
+              batch,
+              { opacity: 0, y: 18 },
+              { opacity: 1, y: 0, duration: 0.85, ease: defaultEase, stagger: 0.12 }
+            );
+          },
+          onLeaveBack: (batch) => {
+            gsap.to(batch, { opacity: 0, y: 12, duration: 0.5, stagger: 0.06, ease: defaultEase });
+          }
+        });
+
+        // gentle continuous sway for testimonials (tiny amplitude)
+        gsap.to(".testimonial-card", { rotationY: 1, duration: 6, yoyo: true, repeat: -1, ease: "sine.inOut", stagger: 0.3, overwrite: false });
+
+        // CTA reveal with minimal scrub
+        gsap.fromTo(
+          ".cta-content",
+          { opacity: 0, y: 24 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: defaultEase,
+            scrollTrigger: { trigger: ctaRef.current, start: "top 80%", end: "top 60%", scrub: 0.5 }
+          }
+        );
       });
 
-      // ====== TESTIMONIALS ======
-      ScrollTrigger.create({
-        trigger: testimonialsRef.current,
-        start: "top 84%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".testimonials-title", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" });
-          gsap.fromTo(
-            ".testimonial-card",
-            { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.9, ease: "power2.out", stagger: 0.12 }
-          );
+      // Mobile & small screens
+      mm.add("(max-width: 1023px)", () => {
+        // About section: slightly later start for mobile
+        gsap.fromTo(
+          ".about-title",
+          { opacity: 0, y: 28 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: aboutRef.current,
+              start: "top 92%",
+              end: "top 70%",
+              scrub: 0.6
+            }
+          }
+        );
 
-          // very gentle sway (low cost)
-          gsap.to(".testimonial-card", {
-            rotationY: 1,
-            duration: 6,
-            ease: "sine.inOut",
-            yoyo: true,
-            repeat: -1,
-            stagger: 0.3,
-            overwrite: false
-          });
-        }
+        gsap.fromTo(
+          ".about-text",
+          { opacity: 0, y: 16 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: defaultEase,
+            scrollTrigger: {
+              trigger: aboutRef.current,
+              start: "top 90%",
+              end: "top 72%",
+              scrub: 0.45
+            }
+          }
+        );
+
+        // FEATURES: batch with later start and slightly different timing
+        ScrollTrigger.batch(".feature-card", {
+          interval: 0.14,
+          batchMax: 4,
+          start: "top 92%",
+          onEnter: (batch) => {
+            gsap.fromTo(
+              batch,
+              { opacity: 0, y: 22, scale: 0.995 },
+              { opacity: 1, y: 0, scale: 1, duration: 0.95, ease: defaultEase, stagger: 0.09 }
+            );
+          },
+          onLeaveBack: (batch) => gsap.to(batch, { opacity: 0, y: 12, duration: 0.45, stagger: 0.05 })
+        });
+
+        // Feature title/subtitle without heavy scrub (mobile performance)
+        gsap.fromTo(".features-title", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.9, ease: defaultEase, scrollTrigger: { trigger: featuresRef.current, start: "top 90%", end: "top 72%", scrub: 0.45 } });
+        gsap.fromTo(".features-subtitle", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.8, ease: defaultEase, scrollTrigger: { trigger: featuresRef.current, start: "top 90%", end: "top 74%", scrub: 0.35 } });
+
+        // Testimonials batch for mobile
+        ScrollTrigger.batch(".testimonial-card", {
+          interval: 0.16,
+          batchMax: 3,
+          start: "top 92%",
+          onEnter: (batch) => gsap.fromTo(batch, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.95, stagger: 0.12, ease: defaultEase }),
+          onLeaveBack: (batch) => gsap.to(batch, { opacity: 0, y: 10, duration: 0.45 })
+        });
+
+        // CTA mobile reveal
+        gsap.fromTo(".cta-content", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 1, ease: defaultEase, scrollTrigger: { trigger: ctaRef.current, start: "top 92%", end: "top 74%", scrub: 0.45 } });
       });
 
-      // ====== CTA ======
-      ScrollTrigger.create({
-        trigger: ctaRef.current,
-        start: "top 82%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".cta-content", { opacity: 0, y: 24, scale: 0.995 }, { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power2.out" });
-          gsap.to(".cta-content", {
-            boxShadow: "0 10px 34px rgba(138,79,255,0.10)",
-            duration: 2.2,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-            overwrite: false
-          });
-        }
-      });
-
-      // ====== PRICING & FOOTER ======
-      ScrollTrigger.create({
-        trigger: ".pricing-section",
-        start: "top 86%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".pricing-title", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 });
-          gsap.fromTo(".pricing-card", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.85, stagger: 0.12 });
-        }
-      });
-
-      ScrollTrigger.create({
-        trigger: ".footer-section",
-        start: "top 95%",
-        toggleActions: "play none none reverse",
-        onEnter: () => {
-          gsap.fromTo(".footer-content", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 });
-        }
-      });
-
-      // Global parallax for entire body (low amplitude)
+      // Global parallax for the whole page with low amplitude (works across breakpoints)
       ScrollTrigger.create({
         trigger: "body",
         start: "top top",
@@ -213,19 +275,27 @@ const Index = () => {
           gsap.to(".parallax-fast", { y: self.progress * 120, duration: 0.35, overwrite: true });
         }
       });
+
+      // Ensure mm is cleaned up when ctx reverts
+      // mm will be reverted in the cleanup code below via mm.revert()
+      // (we keep reference by closure)
     }, heroRef);
 
+    // cleanup
     return () => {
       try {
+        // revert matchMedia handlers and ScrollTrigger instances created by them
+        const mm = (gsap as any).matchMedia && (gsap as any).matchMedia();
+        // Note: mm here is a fresh matchMedia instance; the ones created inside ctx are cleaned by ctx.revert()
+      } finally {
         ctx.revert();
-      } catch (err) {
-        // safe fallback
+        // also ensure existing ScrollTriggers killed (defensive)
+        ScrollTrigger.getAll().forEach((t) => t.kill());
       }
-      ScrollTrigger.getAll().forEach((t) => t.kill());
     };
   }, []);
 
-  // Also kill animations if prefers-reduced-motion toggles later
+  // also listen for dynamic changes to reduce motion preference
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const handler = (e: MediaQueryListEvent) => {
