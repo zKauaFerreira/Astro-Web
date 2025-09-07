@@ -6,139 +6,152 @@ import { VerifiedAnimationPremium } from "@/components/verified-animation-premiu
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 
+/**
+ * CONFIGURAÇÃO (Ajuste nas variáveis de ambiente)
+ * - NEXT_PUBLIC_EXPO_SCHEME: esquema exp:// para abrir o Expo/Dev client (ex: exp://exp.host/@username/project)
+ * - NEXT_PUBLIC_EXPO_WEB: fallback público do projeto no expo.dev (ex: https://expo.dev/@username/project)
+ *
+ * Exemplo .env:
+ * NEXT_PUBLIC_EXPO_SCHEME=exp://exp.host/@your-username/your-project
+ * NEXT_PUBLIC_EXPO_WEB=https://expo.dev/@your-username/your-project
+ */
+const EXPO_SCHEME = process.env.NEXT_PUBLIC_EXPO_SCHEME || "exp://exp.host/@your-username/your-project";
+const EXPO_WEB = process.env.NEXT_PUBLIC_EXPO_WEB || "https://expo.dev/@your-username/your-project";
+
 const Verified = () => {
   useEffect(() => {
     document.title = "Email Verificado - AstroRhythm";
   }, []);
 
   const handleReturnToApp = () => {
-    // deep link scheme + fallbacks
-    const appScheme = "astrorhythm://verified";
-    const androidStoreUrl = "https://play.google.com/store/apps/details?id=com.astrorhythm"; // substituir se necessário
-    const iosStoreUrl = "https://apps.apple.com/app/idYOUR_APP_ID"; // substituir pelo ID real
-    const fallbackWeb = "https://astrorhythm.com"; // fallback web
-
+    // Tentativa de abrir o Expo diretamente (Expo Go / Dev Client).
+    // Se não abrir, cairá no EXPO_WEB (página do projeto no expo.dev).
     const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
     const isAndroid = /android/i.test(ua);
     const isIOS = /iPhone|iPad|iPod/i.test(ua);
+
     let didOpenApp = false;
     let visibilityListener: (() => void) | null = null;
-    let cleanupTimeout = 0;
+    let cleanupTimer: number | undefined;
 
     const openFallback = (url: string) => {
       try {
         window.location.href = url;
-      } catch (e) {
+      } catch {
         window.open(url, "_blank");
       }
     };
 
-    // mark that app was opened when visibility changes
     const markOpened = () => {
       didOpenApp = true;
-      // cleanup if needed
       if (visibilityListener) {
         document.removeEventListener("visibilitychange", visibilityListener);
         visibilityListener = null;
       }
-      if (cleanupTimeout) {
-        clearTimeout(cleanupTimeout);
+      if (cleanupTimer) {
+        clearTimeout(cleanupTimer);
       }
     };
 
-    if (isAndroid) {
-      // Use intent:// for Android (opens app if installed, otherwise Play Store)
-      try {
-        // Try intent first — this pattern usually opens app when installed.
-        const intentUrl = `intent://verified#Intent;scheme=astrorhythm;package=com.astrorhythm;end`;
-        // set a listener to detect if document becomes hidden (user left to app)
-        visibilityListener = () => {
-          if (document.visibilityState === "hidden") markOpened();
-        };
-        document.addEventListener("visibilitychange", visibilityListener);
+    // Listen for visibility change (if user switched to Expo app)
+    visibilityListener = () => {
+      if (document.visibilityState === "hidden") markOpened();
+    };
+    document.addEventListener("visibilitychange", visibilityListener);
 
-        // open intent
+    if (isAndroid) {
+      // Android: tentar intent para abrir Expo Go (host.exp.exponent) — se não, fallback web.
+      try {
+        // Tentativa 1: abrir intent que aponta para package do Expo Go (host.exp.exponent).
+        // Ajuste se você tiver um dev client com outro package.
+        // Intenção: abrir o Expo/Dev client diretamente.
+        const intentUrl = `intent://@open#Intent;scheme=exp;package=host.exp.exponent;S.browser_fallback_url=${encodeURIComponent(
+          EXPO_WEB
+        )};end`;
+
+        // Navega para intent (muito comum em Android Chrome)
         window.location.href = intentUrl;
 
-        // fallback to Play Store after a timeout if app didn't open
-        cleanupTimeout = window.setTimeout(() => {
+        // Se não abriu, depois de um tempo fallback para EXPO_WEB
+        cleanupTimer = window.setTimeout(() => {
           if (!didOpenApp) {
-            // Remove listener and navigate to Play Store
             if (visibilityListener) {
               document.removeEventListener("visibilitychange", visibilityListener);
               visibilityListener = null;
             }
-            openFallback(androidStoreUrl);
+            openFallback(EXPO_WEB);
           }
-        }, 1500);
+        }, 1200);
       } catch (err) {
-        openFallback(androidStoreUrl);
+        // Em caso de erro, abre fallback
+        if (visibilityListener) {
+          document.removeEventListener("visibilitychange", visibilityListener);
+          visibilityListener = null;
+        }
+        openFallback(EXPO_WEB);
       }
       return;
     }
 
     if (isIOS) {
-      // iOS: try iframe trick + visibility detection (not 100% reliable across all iOS versions/browsers)
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = appScheme;
+      // iOS: iframe trick para abrir o esquema exp://
+      try {
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        iframe.src = EXPO_SCHEME; // ex: exp://exp.host/@username/project
+        document.body.appendChild(iframe);
 
-      visibilityListener = () => {
-        if (document.visibilityState === "hidden") {
-          markOpened();
-        }
-      };
-      document.addEventListener("visibilitychange", visibilityListener);
-
-      // append iframe and set fallback
-      document.body.appendChild(iframe);
-
-      cleanupTimeout = window.setTimeout(() => {
-        if (!didOpenApp) {
-          // cleanup iframe and listener
-          try {
-            if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-          } catch {}
-          if (visibilityListener) {
-            document.removeEventListener("visibilitychange", visibilityListener);
-            visibilityListener = null;
+        // fallback para pagina web se app não abrir
+        cleanupTimer = window.setTimeout(() => {
+          if (!didOpenApp) {
+            try {
+              iframe.parentNode?.removeChild(iframe);
+            } catch {}
+            if (visibilityListener) {
+              document.removeEventListener("visibilitychange", visibilityListener);
+              visibilityListener = null;
+            }
+            openFallback(EXPO_WEB);
           }
-          // fallback to App Store
-          openFallback(iosStoreUrl);
-        }
-      }, 1200);
+        }, 1200);
 
-      // ensure we remove iframe/listener if user navigates away or if app opened
-      const removeSafe = () => {
-        try {
-          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-        } catch {}
+        // cleanup em pagehide
+        const removeSafe = () => {
+          try {
+            iframe.parentNode?.removeChild(iframe);
+          } catch {}
+          if (visibilityListener) document.removeEventListener("visibilitychange", visibilityListener);
+          if (cleanupTimer) clearTimeout(cleanupTimer);
+        };
+        window.addEventListener("pagehide", removeSafe, { once: true });
+      } catch (err) {
         if (visibilityListener) {
           document.removeEventListener("visibilitychange", visibilityListener);
           visibilityListener = null;
         }
-        if (cleanupTimeout) clearTimeout(cleanupTimeout);
-      };
-
-      // in case user clicks again or page is unloaded
-      window.addEventListener("pagehide", removeSafe, { once: true });
-
+        openFallback(EXPO_WEB);
+      }
       return;
     }
 
-    // Desktop / other platforms: attempt direct navigation to scheme (may show browser message).
+    // Desktop / other: tentar abrir esquema EXPO_SCHEME, depois fallback web
     try {
-      // attempt open custom scheme
-      window.location.href = appScheme;
-
-      // fallback to web after short timeout
-      cleanupTimeout = window.setTimeout(() => {
+      window.location.href = EXPO_SCHEME;
+      cleanupTimer = window.setTimeout(() => {
         if (!didOpenApp) {
-          openFallback(fallbackWeb);
+          if (visibilityListener) {
+            document.removeEventListener("visibilitychange", visibilityListener);
+            visibilityListener = null;
+          }
+          openFallback(EXPO_WEB);
         }
-      }, 1200);
-    } catch {
-      openFallback(fallbackWeb);
+      }, 1000);
+    } catch (err) {
+      if (visibilityListener) {
+        document.removeEventListener("visibilitychange", visibilityListener);
+        visibilityListener = null;
+      }
+      openFallback(EXPO_WEB);
     }
   };
 
@@ -187,7 +200,7 @@ const Verified = () => {
               </Button>
               
               <p className="text-astro-muted text-sm">
-                Se o aplicativo não abrir automaticamente, você pode baixá-lo nas lojas de aplicativos
+                Se o Expo não abrir automaticamente, você será redirecionado para a página do projeto no Expo.
               </p>
             </div>
 
