@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ArrowLeft, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CosmicCard } from "@/components/ui/cosmic-card";
-import { VerifiedAnimationPremium } from "@/components/verified-animation-premium";
+import { VerifiedAnimation } from "@/components/verified-animation-premium";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 
@@ -36,7 +36,7 @@ const Verified = () => {
             
             {/* Success Animation */}
             <div className="mb-12">
-              <VerifiedAnimationPremium />
+              <VerifiedAnimation />
             </div>
             
             {/* Success Message */}
