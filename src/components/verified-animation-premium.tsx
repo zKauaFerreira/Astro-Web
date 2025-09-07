@@ -15,17 +15,21 @@ export function VerifiedAnimationPremium() {
     <div className="relative flex flex-col items-center justify-center py-16">
       {/* Confetti animation */}
       {isVisible && (
-        <div className="absolute inset-0 pointer-events-none">
-          <Lottie
-            loop={false} // Executa apenas uma vez
-            animationData={confettiJson}
-            play
-            style={{
-              width: "100vw", // Ocupa toda a largura da tela
-              height: "100vh", // Ocupa toda a altura da tela
-              maxHeight: "100%", 
-            }}
-          />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-full h-full">
+            <Lottie
+              loop={false} // Executa apenas uma vez
+              animationData={confettiJson}
+              play
+              style={{
+                width: "150%",  // escala maior que a tela
+                height: "150%", // escala maior que a tela
+                maxWidth: "none",
+                maxHeight: "none",
+                transform: "translate(-25%, -25%)", // centraliza a animação
+              }}
+            />
+          </div>
         </div>
       )}
 
